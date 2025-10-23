@@ -98,4 +98,14 @@
   <class type="rmcs_core::referee::app::ui::Hero" base_class_type="rmcs_executor::Component">
     <description>Test plugin.</description>
   </class>
+  <class type="rmcs_core::controller::signal_processor::SineCosineGenerator" base_class_type="rmcs_executor::Component">
+    <description>Generates sine and cosine signals.</description>
+  </class>
+  <class type="rmcs_core::controller::signal_processor::SignalAdder" base_class_type="rmcs_executor::Component">
+    <description>Adds two signal inputs.</description>
+
+  </class>
 </library>
+
+
+rmcs_core::controller::signal_processor::SignalAdder

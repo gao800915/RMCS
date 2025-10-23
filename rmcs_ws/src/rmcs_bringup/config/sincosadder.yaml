@@ -1,0 +1,21 @@
+rmcs_executor:  
+  ros__parameters:      
+    update_rate: 1000.0  
+    components:  
+      - rmcs_core::controller::signal_processor::SineCosineGenerator -> sine_cosine_gen  
+      - rmcs_core::controller::signal_processor::SignalAdder -> signal_adder  
+      - rmcs_core::broadcaster::ValueBroadcaster -> broadcaster
+
+broadcaster:
+  ros__parameters:
+    forward_list:
+     - /signal/sum
+     - /signal/sine
+     - /signal/cosine
+sine_cosine_gen:  
+  ros__parameters:    
+    omega: 6.28318530718  
+  
+signal_adder:  
+  ros__parameters:    
+    {}
