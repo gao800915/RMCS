@@ -18,18 +18,28 @@ public:
         register_input("/remote/joystick/right", remote_right_joystic_);
         register_input("/remote/switch/left", remote_left_switch_);
         register_input("/remote/switch/right", remote_right_switch_);
-
-        register_output("/example/gm6020/control_velocity", motor_control_velocity_);
+        register_input("/example/M2006/angle", M2006velocity);
+        //register_input("/example/M2006/control_torque", control_torque);
+        register_output("/example/M2006/control_velocity", motor_control_velocity_);
+        
+        
     }
 
     void update() override {
         using namespace rmcs_msgs;
         if ((*remote_left_switch_ == Switch::DOWN || *remote_left_switch_ == Switch::UNKNOWN)
             && (*remote_right_switch_ == Switch::DOWN || *remote_right_switch_ == Switch::UNKNOWN)) {
+        
             // stop all !!
         } else {
+
             *motor_control_velocity_ = 20 * remote_left_joystic_->x();
-            // RCLCPP_INFO(get_logger(), "%lf", *motor_control_velocity_);
+            if(count% 100 == 0){
+            RCLCPP_INFO(get_logger(), "%lf", *motor_control_velocity_);
+            RCLCPP_INFO(get_logger(), "%lf",*M2006velocity);
+            }
+            count++;
+            
         }
     }
 
@@ -41,8 +51,9 @@ private:
 
     InputInterface<Eigen::Vector2d> remote_left_joystic_;
     InputInterface<Eigen::Vector2d> remote_right_joystic_;
-
+    InputInterface<double> M2006velocity;
     OutputInterface<double> motor_control_velocity_;
+    int count=0;
 };
 
 } // namespace rmcs_core::example

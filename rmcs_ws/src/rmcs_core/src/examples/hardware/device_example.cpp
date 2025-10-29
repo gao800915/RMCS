@@ -6,6 +6,7 @@
 #include "librmcs/client/cboard.hpp"
 #include <rcl/publisher.h>
 #include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rmcs_executor/component.hpp>
 namespace rmcs_core::hardware {
@@ -22,11 +23,11 @@ public:
         , logger_(get_logger())
         , CBoard_command_(create_partner_component<CBoardCommand>(get_component_name() + "_command", *this))
         , dr16_(*this)
-        , gm6020_(*this, *CBoard_command_, "/example/gm6020")
+        , M2006_(*this, *CBoard_command_, "/example/M2006")
         , transmit_buffer_(*this, 32)
         , event_thread_([this]() { handle_events(); }) {
 
-        gm6020_.configure(device::DjiMotor::Config{device::DjiMotor::Type::GM6020});
+        M2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006});
     }
 
     ~DeviceExample() override {
@@ -42,17 +43,17 @@ public:
     void command_update() {
         uint16_t can_commands[4];
 
-        can_commands[0] = gm6020_.generate_command();
+        can_commands[0] = M2006_.generate_command();
         can_commands[1] = 0;
         can_commands[2] = 0;
         can_commands[3] = 0;
-        transmit_buffer_.add_can1_transmission(0x1FE, std::bit_cast<uint64_t>(can_commands));
+        transmit_buffer_.add_can1_transmission(0x200, std::bit_cast<uint64_t>(can_commands));
 
         can_commands[0] = 0;
         can_commands[1] = 0;
         can_commands[2] = 0;
         can_commands[3] = 0;
-        transmit_buffer_.add_can1_transmission(0x200, std::bit_cast<uint64_t>(can_commands));
+        transmit_buffer_.add_can1_transmission(0x1FF, std::bit_cast<uint64_t>(can_commands));
 
         can_commands[0] = 0;
         can_commands[1] = 0;
@@ -70,7 +71,7 @@ public:
     }
 
 private:
-    void update_motors() { gm6020_.update_status(); }
+    void update_motors() { M2006_.update_status(); }
 
 protected:
     void can1_receive_callback(
@@ -79,8 +80,8 @@ protected:
         if (is_extended_can_id || is_remote_transmission || can_data_length < 8) [[unlikely]]
             return;
 
-        if (can_id == 0x205) {
-            gm6020_.store_status(can_data);
+        if (can_id == 0x201) {
+            M2006_.store_status(can_data);
         }
     }
 
@@ -113,7 +114,7 @@ private:
     // device
     device::Dr16 dr16_;
 
-    device::DjiMotor gm6020_;
+    device::DjiMotor M2006_;
 
     librmcs::client::CBoard::TransmitBuffer transmit_buffer_;
     std::thread event_thread_;
