@@ -15,7 +15,7 @@ public:
         status_component.register_output(name_prefix + "/velocity", velocity_, 0.0);
         status_component.register_output(name_prefix + "/torque", torque_, 0.0);
         status_component.register_output(name_prefix + "/max_torque", max_torque_, 0.0);
-
+        
         command_component.register_input(name_prefix + "/control_torque", control_torque_, false);
     }
 

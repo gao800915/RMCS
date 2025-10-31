@@ -4,25 +4,42 @@ rmcs_executor:
     components:
       - rmcs_core::hardware::DeviceExample -> cboard_example
       - rmcs_core::example::RemoteControllerExample -> remote_control_message
-      - rmcs_core::controller::pid::PidController -> M2006_velicity_controller
+
+      - rmcs_core::controller::pid::PidController -> angle_torque
+      - rmcs_core::controller::pid::PidController -> left2006_velocity_controller
+      - rmcs_core::controller::pid::PidController -> right2006_velocity_controller
 
 
 cboard_example:
   ros__parameters:
     usb_pid: -1
 
-M2006_velicity_controller:
+left2006_velocity_controller:
   ros__parameters:
-    setpoint: /example/M2006/control_velocity
-    measurement: /example/M2006/velocity
-    control: /example/M2006/control_torque
+    setpoint: /example/left2006/control_velocity
+    measurement: /example/left2006/velocity
+    control: /example/left2006/control_torque
     kp: 10.0
     ki: 0.0
     kd: 0.0
-broadcaster:
+
+right2006_velocity_controller:
   ros__parameters:
-    forward_list:
-     - /example/M2006/control_velocity
+    setpoint: /example/right2006/control_velocity
+    measurement: /example/right2006/velocity
+    control: /example/right2006/control_torque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+
+angle_torque:
+  ros__parameters:
+    setpoint: 0.0
+    measurement: /dragon/roll/angle
+    control: /dragon/angle/torque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
 
 remote_control_message:
   ros__parameters:
