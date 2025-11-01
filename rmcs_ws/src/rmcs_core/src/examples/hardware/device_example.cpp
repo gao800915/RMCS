@@ -4,6 +4,7 @@
 #include "hardware/device/dji_motor.hpp"
 #include "hardware/device/dr16.hpp"
 #include "librmcs/client/cboard.hpp"
+#include <cmath>
 #include <cstdint>
 #include <rcl/publisher.h>
 #include <rclcpp/logger.hpp>
@@ -13,6 +14,9 @@
 #include "hardware/device/bmi088.hpp"
 #include <rmcs_description/tf_description.hpp>
 #include "librmcs/device/bmi088.hpp"
+#include <math.h>
+#define fc 10 //Corner Frequency
+#define fs 1000 //Sampling Frequency
 namespace rmcs_core::hardware {
 
 class DeviceExample
@@ -43,6 +47,8 @@ public:
         register_output("/dragon/pitch/velocity_imu", dragon_pitch_velocity_imu_);
         register_output("/dragon/roll/velocity_imu", dragon_roll_velocity_imu_);
         register_output("/dragon/roll/angle", roll_angle);
+        register_output("/dragon/roll/angle_a", roll_angle_a_);
+        register_output("/dragon/roll/angle_g", roll_angle_g_);
         register_output("/tf", tf_);
         register_input("/dragon/angle/torque", angle_torque);
         register_input("/example/left2006/angle", left2006_current_angle);
@@ -76,7 +82,10 @@ public:
           //  RCLCPP_INFO(get_logger(), "%lf", *dragon_yaw_velocity_imu_);
           //  RCLCPP_INFO(get_logger(), "%lf",*dragon_pitch_velocity_imu_);
             RCLCPP_INFO(get_logger(), "088_original_data:%lf",*dragon_roll_velocity_imu_); //
-            RCLCPP_INFO(get_logger(), "088_pid_data:%lf",*roll_angle);
+            RCLCPP_INFO(get_logger(), "088_pid_angle_torque:%lf",*angle_torque);
+            RCLCPP_INFO(get_logger(), "088_origin_angle_a_data:%lf",*roll_angle_a_);
+            RCLCPP_INFO(get_logger(), "088_origin_angle_g_data:%lf",*roll_angle_g_);
+            RCLCPP_INFO(get_logger(), "088_calculated_angle_data:%lf",*roll_angle);
         }
         count++;
     }
@@ -127,14 +136,20 @@ private:
         /* tf_->set_transform<rmcs_description::PitchLink, rmcs_description::OdomImu>(
             gimbal_imu_pose.conjugate()); */
 
-        *dragon_yaw_velocity_imu_   = bmi088_.gz();
+        *dragon_yaw_velocity_imu_   = bmi088_.gz() / std::numbers::pi * 180.0;
         *dragon_pitch_velocity_imu_ = bmi088_.gy();
-        *dragon_roll_velocity_imu_ = bmi088_.gx();
+        *dragon_roll_velocity_imu_ = bmi088_.gx() / std::numbers::pi * 180.0;
+        double dragon_ax = bmi088_.ax();
+        double dragon_az = bmi088_.az();
+        *roll_angle_a_ = atan2(dragon_ax,dragon_az) / std::numbers::pi * 180.0;
     }
 
     void updateAngle() {
-    *roll_angle += (*dragon_roll_velocity_imu_) * dt;
+    
+    *roll_angle_g_ += (*dragon_roll_velocity_imu_) * dt;
+    *roll_angle = alpha*(*roll_angle_g_)+(1-alpha)*(*roll_angle_a_);
 }
+    
 
 protected:
     void can1_receive_callback(
@@ -200,13 +215,16 @@ private:
     OutputInterface<double> dragon_pitch_velocity_imu_;
     OutputInterface<double> dragon_roll_velocity_imu_;
     OutputInterface<double> roll_angle;
+    OutputInterface<double> roll_angle_a_;
+    OutputInterface<double> roll_angle_g_;
     InputInterface<double> angle_torque;
     InputInterface<double> left2006_current_angle;
     InputInterface<double> right2006_current_angle;
 
     librmcs::client::CBoard::TransmitBuffer transmit_buffer_;
     std::thread event_thread_;
-    
+   
+   double alpha=1/(1+(fc/fs)) ;
 
     double dt = 0.001;
     int count=0.0;
