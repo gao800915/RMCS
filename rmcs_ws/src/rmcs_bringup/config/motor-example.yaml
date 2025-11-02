@@ -4,43 +4,61 @@ rmcs_executor:
     components:
       - rmcs_core::hardware::DeviceExample -> cboard_example
       - rmcs_core::example::RemoteControllerExample -> remote_control_message
-
+      - rmcs_core::example::imu -> imu
+      - rmcs_core::filter::medianfilter -> medianfilter
+      - rmcs_core::example::pitchcontroll -> pitchcontroll
       - rmcs_core::controller::pid::PidController -> angle_torque
       - rmcs_core::controller::pid::PidController -> left2006_velocity_controller
       - rmcs_core::controller::pid::PidController -> right2006_velocity_controller
-
-
+      - rmcs_core::controller::pid::PidController -> pitch_pid
+      
 cboard_example:
   ros__parameters:
     usb_pid: -1
-
-left2006_velocity_controller:
-  ros__parameters:
-    setpoint: /example/left2006/control_velocity
-    measurement: /example/left2006/velocity
-    control: /example/left2006/control_torque
-    kp: 10.0
-    ki: 0.0
-    kd: 0.0
-
-right2006_velocity_controller:
-  ros__parameters:
-    setpoint: /example/right2006/control_velocity
-    measurement: /example/right2006/velocity
-    control: /example/right2006/control_torque
-    kp: 10.0
-    ki: 0.0
-    kd: 0.0
 
 angle_torque:
   ros__parameters:
     setpoint: 0.0
     measurement: /dragon/roll/angle
     control: /dragon/angle/torque
+    kp: 12.0
+    ki: 0.0
+    kd: 0.0
+
+left2006_velocity_controller:
+  ros__parameters:
+    setpoint: /example/left2006/aim_velocity
+    measurement: /example/left2006/velocity
+    control: /example/left2006/control_torque_base
     kp: 10.0
     ki: 0.0
     kd: 0.0
 
+right2006_velocity_controller:
+  ros__parameters:
+    setpoint: /example/right2006/aim_velocity
+    measurement: /example/right2006/velocity
+    control: /example/right2006/control_torque_base
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+pitch_pid:
+  ros__parameters:
+    setpoint: 25
+    measurement: "/dragon/pitch/angle"
+    control: /dragon/pitch_angle/torque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+imu:
+  ros__parameters:
+    {}
+pitchcontroll:
+  ros__parameters:
+    {}
+medianfilter:
+  ros__parameters:
+    {}
 remote_control_message:
   ros__parameters:
     {}

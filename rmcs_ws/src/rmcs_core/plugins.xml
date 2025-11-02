@@ -98,13 +98,19 @@
   <class type="rmcs_core::referee::app::ui::Hero" base_class_type="rmcs_executor::Component">
     <description>Test plugin.</description>
   </class>
-  <class type="rmcs_core::hardware::SingleCBoardExample" base_class_type="rmcs_executor::Component">
+  <class type="rmcs_core::example::imu" base_class_type="rmcs_executor::Component">
     <description>Test plugin.</description>
   </class>
   <class type="rmcs_core::hardware::DeviceExample" base_class_type="rmcs_executor::Component">
     <description>Test plugin.</description>
   </class>
   <class type="rmcs_core::example::RemoteControllerExample" base_class_type="rmcs_executor::Component">
+    <description>Test plugin.</description>
+  </class>
+  <class type="rmcs_core::filter::medianfilter" base_class_type="rmcs_executor::Component">
+    <description>Test plugin.</description>
+  </class>
+  <class type="rmcs_core::example::pitchcontroll" base_class_type="rmcs_executor::Component">
     <description>Test plugin.</description>
   </class>
 </library>
