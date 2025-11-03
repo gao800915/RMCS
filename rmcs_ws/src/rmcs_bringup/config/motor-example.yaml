@@ -8,10 +8,11 @@ rmcs_executor:
       - rmcs_core::filter::medianfilter -> medianfilter
       - rmcs_core::example::pitchcontroll -> pitchcontroll
       - rmcs_core::controller::pid::PidController -> angle_torque
+      - rmcs_core::example::pitchcontrolltorque -> pitchcontrolltorque
       - rmcs_core::controller::pid::PidController -> left2006_velocity_controller
       - rmcs_core::controller::pid::PidController -> right2006_velocity_controller
       - rmcs_core::controller::pid::PidController -> pitch_pid
-      
+    
 cboard_example:
   ros__parameters:
     usb_pid: -1
@@ -44,12 +45,15 @@ right2006_velocity_controller:
     kd: 0.0
 pitch_pid:
   ros__parameters:
-    setpoint: 25
+    setpoint: 20.0
     measurement: "/dragon/pitch/angle"
     control: /dragon/pitch_angle/torque
     kp: 10.0
     ki: 0.0
     kd: 0.0
+pitchcontrolltorque:
+  ros__parameters:
+    {}
 imu:
   ros__parameters:
     {}

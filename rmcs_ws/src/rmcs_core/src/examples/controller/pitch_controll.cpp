@@ -17,7 +17,6 @@ public:
         : Node{get_component_name(), rclcpp::NodeOptions{}.automatically_declare_parameters_from_overrides(true)}
         , logger_(get_logger())
          {
-       
        register_input("/dragon/pitch/angle_g",pitch_angle_g_);
         register_input("/dragon/pitch/angle_a",pitch_angle_a_);
         register_output("/dragon/pitch/angle", pitch_angle);
@@ -33,7 +32,7 @@ public:
     }
     void pitch_angle_calculate()
     {
-        *pitch_angle = alpha*(*pitch_angle_a_)+(1.0-alpha)*(*pitch_angle_g_);
+        *pitch_angle = *pitch_angle_a_;
     }
 
 private:

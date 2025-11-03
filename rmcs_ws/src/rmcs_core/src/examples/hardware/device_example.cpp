@@ -39,8 +39,8 @@ public:
         , event_thread_([this]() { handle_events(); }) {
 
      // M2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006});
-        left2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006});
-        right2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006});
+        left2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006}.set_reversed());
+        right2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006}.set_reversed());
 
        
         //register_output("/dragon/roll/angle", roll_angle);
@@ -152,8 +152,8 @@ private:
        //*roll_angle = alpha*(*roll_angle_g_)+(1.0-alpha)*(*roll_angle_a_);
 
        //以下是pitch角
-       double dragon_pitch_velocity_imu_ = bmi088_.gx() / std::numbers::pi * 180.0;
-       *pitch_angle_g_ += (dragon_roll_velocity_imu_) * dt;
+       double dragon_pitch_velocity_imu_ = bmi088_.gy() / std::numbers::pi * 180.0;
+       *pitch_angle_g_ += (dragon_pitch_velocity_imu_) * dt;
         //double jump180_angle= atan2(dragon_ax,dragon_az) / std::numbers::pi * 180.0;
         //*pitch_angle_a_ = convert_to_180_offset(jump180_angle);
         *pitch_angle_a_=(atan2(dragon_ay,dragon_az) / std::numbers::pi * 180.0)+180;
@@ -161,7 +161,7 @@ private:
      }
     
      double convert_to_180_offset(double current_angle) {
-        double offset_from_180;
+        
         if(current_angle>0)
         {
             offset_from_180=180-current_angle;
@@ -254,6 +254,7 @@ private:
     double prev_angle;
     double dt = 0.001;
     int count=0.0;
+    double offset_from_180=0.0;
 };
 } // namespace rmcs_core::hardware
 
