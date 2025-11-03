@@ -19,54 +19,37 @@
 #define fs 1000.0 //Sampling Frequency
 namespace rmcs_core::hardware {
 
-class DeviceExample
+class mycboard
     : public rmcs_executor::Component
     , public rclcpp::Node
     , private librmcs::client::CBoard {
 
 public:
-    DeviceExample()
+    mycboard()
         : Node{get_component_name(), rclcpp::NodeOptions{}.automatically_declare_parameters_from_overrides(true)}
         , librmcs::client::CBoard{static_cast<int>(get_parameter("usb_pid").as_int())}
         , logger_(get_logger())
         , CBoard_command_(create_partner_component<CBoardCommand>(get_component_name() + "_command", *this))
         , dr16_(*this)
-        , M2006_(*this, *CBoard_command_, "/example/M2006")
         ,left2006_(*this,*CBoard_command_,"/example/left2006")
         ,right2006_(*this,*CBoard_command_,"/example/right2006")
         ,bmi088_(1000,0.2,0.0)
         , transmit_buffer_(*this, 32)
         , event_thread_([this]() { handle_events(); }) {
 
-     // M2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006});
+
         left2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006}.set_reversed());
         right2006_.configure(device::DjiMotor::Config{device::DjiMotor::Type::M2006}.set_reversed());
 
-       
-        //register_output("/dragon/roll/angle", roll_angle);
+    
         register_output("/dragon/roll/angle_g", roll_angle_g_);
         register_output("/dragon/roll/angle_a", roll_angle_a_);
         register_output("/dragon/pitch/angle_g", pitch_angle_g_);
         register_output("/dragon/pitch/angle_a", pitch_angle_a_);
-       // register_output("/tf", tf_);
-       // register_input("/dragon/angle/torque", angle_torque);
-      //  register_input("/example/left2006/angle", left2006_current_angle);
-      //  register_input("/example/right2006/angle", right2006_current_angle);
-      //  bmi088_.set_coordinate_mapping([](double x, double y, double z) {
-            // Get the mapping with the following code.
-            // The rotation angle must be an exact multiple of 90 degrees, otherwise use a matrix.
-
-            // Eigen::AngleAxisd pitch_link_to_imu_link{
-            //     std::numbers::pi / 2, Eigen::Vector3d::UnitZ()};
-            // Eigen::Vector3d mapping = pitch_link_to_imu_link * Eigen::Vector3d{1, 2, 3};
-            // std::cout << mapping << std::endl;*right_motor_aim_velocity_
-
-           // return std::make_tuple(-y, x, z);
-      //  });
 
     }
 
-    ~DeviceExample() override {
+    ~mycboard() override {
         stop_handling_events();
         event_thread_.join();
     }
@@ -75,17 +58,7 @@ public:
         dr16_.update_status();
         update_motors();
         update_imu();
-        if(count%200==0)
-        {
-          //  RCLCPP_INFO(get_logger(), "%lf", *dragon_yaw_velocity_imu_);
-          //  RCLCPP_INFO(get_logger(), "%lf",*dragon_pitch_velocity_imu_);
-          //  RCLCPP_INFO(get_logger(), "088_original_data:%lf",*dragon_roll_velocity_imu_); //
-           // RCLCPP_INFO(get_logger(), "088_roll_angle:%lf",*roll_angle);
-           // RCLCPP_INFO(get_logger(), "088_origin_angle_a_data:%lf",*roll_angle_a_);
-          //  RCLCPP_INFO(get_logger(), "088_origin_angle_g_data:%lf",*roll_angle_g_);
-          //  RCLCPP_INFO(get_logger(), "088_calculated_angle_data:%lf",*roll_angle);
-        }
-        count++;
+
     }
 
     void command_update() {
@@ -122,7 +95,7 @@ public:
 private:
     void update_motors() 
     {
-      // M2006_.update_status(); 
+
     left2006_.update_status();
     right2006_.update_status();
     
@@ -130,32 +103,27 @@ private:
 
     void update_imu() {
         bmi088_.update_status();
-        //以下是roll角
-        Eigen::Quaterniond gimbal_imu_pose{bmi088_.q0(), bmi088_.q1(), bmi088_.q2(), bmi088_.q3()};
-        /* tf_->set_transform<rmcs_description::PitchLink, rmcs_description::OdomImu>(
-            gimbal_imu_pose.conjugate()); */
-
-       
-       //get tuoluoyi
-       double dragon_roll_velocity_imu_ = bmi088_.gx() / std::numbers::pi * 180.0;
-       *roll_angle_g_ += (dragon_roll_velocity_imu_) * dt;
         
-        // get jiasudu
+         // read_bmi_status
         double dragon_ax = bmi088_.ax();
         double dragon_ay = bmi088_.ay();
         double dragon_az = bmi088_.az();
+        Eigen::Quaterniond gimbal_imu_pose{bmi088_.q0(), bmi088_.q1(), bmi088_.q2(), bmi088_.q3()};
+
+       //以下是roll角
+
+       double dragon_roll_velocity_imu_ = bmi088_.gx() / std::numbers::pi * 180.0;
+       *roll_angle_g_ += (dragon_roll_velocity_imu_) * dt;
         
+       
         double jump180_angle= atan2(dragon_ax,dragon_az) / std::numbers::pi * 180.0;
         *roll_angle_a_ = convert_to_180_offset(jump180_angle);
 
-        //get finall data
-       //*roll_angle = alpha*(*roll_angle_g_)+(1.0-alpha)*(*roll_angle_a_);
+        //以下是pitch角
+        double dragon_pitch_velocity_imu_ = bmi088_.gy() / std::numbers::pi * 180.0;
+       
+        *pitch_angle_g_ += (dragon_pitch_velocity_imu_) * dt;
 
-       //以下是pitch角
-       double dragon_pitch_velocity_imu_ = bmi088_.gy() / std::numbers::pi * 180.0;
-       *pitch_angle_g_ += (dragon_pitch_velocity_imu_) * dt;
-        //double jump180_angle= atan2(dragon_ax,dragon_az) / std::numbers::pi * 180.0;
-        //*pitch_angle_a_ = convert_to_180_offset(jump180_angle);
         *pitch_angle_a_=(atan2(dragon_ay,dragon_az) / std::numbers::pi * 180.0)+180;
 
      }
@@ -184,7 +152,7 @@ protected:
             return;
 
         if (can_id == 0x201) {
-         // M2006_.store_status(can_data);
+
          left2006_.store_status(can_data);
         }
 
@@ -218,46 +186,36 @@ private:
 
     class CBoardCommand : public rmcs_executor::Component {
     public:
-        explicit CBoardCommand(DeviceExample& cboard)
+        explicit CBoardCommand(mycboard& cboard)
             : cboard_(cboard) {}
 
         void update() override { cboard_.command_update(); }
 
-        DeviceExample& cboard_;
+        mycboard& cboard_;
     };
     std::shared_ptr<CBoardCommand> CBoard_command_;
 
     // device
     device::Dr16 dr16_;
-
-    device::DjiMotor M2006_;
     device::DjiMotor left2006_;
     device::DjiMotor right2006_;
     
     device::Bmi088 bmi088_;
-  //  OutputInterface<rmcs_description::Tf> tf_;
 
- 
     //OutputInterface<double> roll_angle;
     OutputInterface<double> roll_angle_a_;
     OutputInterface<double> roll_angle_g_;
     OutputInterface<double> pitch_angle_a_;
     OutputInterface<double> pitch_angle_g_;
-    InputInterface<double> left2006_current_angle;
-    InputInterface<double> right2006_current_angle;
+
 
     librmcs::client::CBoard::TransmitBuffer transmit_buffer_;
     std::thread event_thread_;
-   double prev_roll_angle_a_ = 0.0;
-    int unwrap_count_ = 0;
-   double alpha=1.0/(1+(fc/fs)) ;
-    double prev_angle;
     double dt = 0.001;
-    int count=0.0;
     double offset_from_180=0.0;
 };
 } // namespace rmcs_core::hardware
 
 #include <pluginlib/class_list_macros.hpp>
 
-PLUGINLIB_EXPORT_CLASS(rmcs_core::hardware::DeviceExample, rmcs_executor::Component)
+PLUGINLIB_EXPORT_CLASS(rmcs_core::hardware::mycboard, rmcs_executor::Component)

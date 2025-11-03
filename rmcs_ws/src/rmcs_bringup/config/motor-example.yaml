@@ -2,85 +2,90 @@ rmcs_executor:
   ros__parameters:
     update_rate: 1000.0
     components:
-      - rmcs_core::hardware::DeviceExample -> cboard_example
-      - rmcs_core::example::RemoteControllerExample -> remote_control_message
-      - rmcs_core::example::imu -> imu
-      - rmcs_core::filter::medianfilter -> medianfilter
-      - rmcs_core::example::pitchcontroll -> pitchcontroll
-      - rmcs_core::controller::pid::PidController -> angle_torque
-      - rmcs_core::example::pitchcontrolltorque -> pitchcontrolltorque
-      - rmcs_core::controller::pid::PidController -> left2006_velocity_controller
-      - rmcs_core::controller::pid::PidController -> right2006_velocity_controller
-      - rmcs_core::controller::pid::PidController -> pitch_pid
-      - rmcs_core::controller::pid::PidController -> pitch_pid_left_control_torque
-      - rmcs_core::controller::pid::PidController -> pitch_pid_right_control_torque
-    
+      - rmcs_core::hardware::mycboard -> cboard_example
+      - rmcs_core::angle::anglecalculator -> anglecalculator
+      - rmcs_core::example::RemoteControllerExample -> remote_controller
+      
+      - rmcs_core::controller::pid::PidController -> dr16_leftmotor_basic_torque_pid
+      - rmcs_core::controller::pid::PidController -> dr16_rightmotor_basic_torque_pid
+      - rmcs_core::controller::pid::PidController -> roll_0_controller_pid
+
+      - rmcs_core::controller::pid::PidController -> target_pitch_angle_control_velocity_pid
+      - rmcs_core::controller::pid::PidController -> target_pitch_left_control_velocity_pid
+      - rmcs_core::controller::pid::PidController -> target_pitch_left_control_velocity_pid
+
+      - rmcs_core::example::dr16finaltorque -> dr16finaltorque
+      - rmcs_core::example::pitchcontrolltorque -> targetfinaltorque
+      - rmcs_core::example::info -> info
 cboard_example:
   ros__parameters:
     usb_pid: -1
 
-angle_torque:
+target_pitch_angle_control_velocity_pid:
+  ros__parameters: 
+    measurement: /dragon/pitch/angle
+    setpoint: 28
+    control: /target/pitch/aim/velocity
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+
+target_pitch_left_control_velocity_pid:
+  ros__parameters: 
+    measurement: /example/left2006/velocity
+    setpoint: /target/pitch/aim/velocity
+    control: /target/pitch/left/basic/torque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+
+
+target_pitch_right_control_velocity_pid:
+  ros__parameters: 
+    measurement: /example/right2006/velocity
+    setpoint: /target/pitch/aim/velocity
+    control: /target/pitch/right/basic/torque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+
+
+dr16_leftmotor_basic_torque_pid:
+  ros__parameters: 
+    measurement: /example/left2006/velocity
+    setpoint: /example/dr16/aim_velocity
+    control: /example/dr16/left2006/basictorque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+dr16_rightmotor_basic_torque_pid:
   ros__parameters:
+    measurement: /example/right2006/velocity
+    setpoint: /example/dr16/aim_velocity
+    control: /example/dr16/right2006/basictorque
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+roll_0_controller_pid:
+  ros__parameters:
+    measurement: dragon/roll/angle
     setpoint: 0.0
-    measurement: /dragon/roll/angle
-    control: /dragon/angle/torque
-    kp: 12.0
+    control: roll/angle/basictorque
+    kp: 0.0
     ki: 0.0
     kd: 0.0
-
-left2006_velocity_controller:
-  ros__parameters:
-    setpoint: /example/left2006/aim_velocity
-    measurement: /example/left2006/velocity
-    control: /example/left2006/control_torque_base
-    kp: 10.0
-    ki: 0.0
-    kd: 0.0
-
-right2006_velocity_controller:
-  ros__parameters:
-    setpoint: /example/right2006/aim_velocity
-    measurement: /example/right2006/velocity
-    control: /example/right2006/control_torque_base
-    kp: 2.0
-    ki: 0.01
-    kd: 0.0
-pitch_pid:
-  ros__parameters:
-    setpoint: 20.0
-    measurement: "/dragon/pitch/angle"
-    control: /dragon/pitch_angle/aim_velocity
-    kp: 10.0
-    ki: 0.0
-    kd: 0.0
-pitch_pid_left_control_torque:
-  ros__parameters:
-    setpoint: /dragon/pitch_angle/aim_velocity
-    measurement: /example/left2006/velocity
-    control: /example/left2006/control_pitch_torque_base
-    kp: 10.0
-    ki: 0.0
-    kd: 0.0
-pitch_pid_right_control_torque:
-  ros__parameters:
-    setpoint: /dragon/pitch_angle/aim_velocity
-    measurement: /example/right2006/velocity
-    control: /example/left2006/control_pitch_torque_base
-    kp: 10.0
-    ki: 0.0
-    kd: 0.0
-pitchcontrolltorque:
+anglecalculator:
   ros__parameters:
     {}
-imu:
+remote_controller:
   ros__parameters:
     {}
-pitchcontroll:
+dr16finaltorque:
   ros__parameters:
     {}
-medianfilter:
+targetfinaltorque:
   ros__parameters:
     {}
-remote_control_message:
+info:
   ros__parameters:
     {}
