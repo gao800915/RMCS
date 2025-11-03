@@ -17,8 +17,8 @@ public:
         , logger_(get_logger()) {
         register_input("/dragon/angle/torque", angle_torgue);
         register_input("/dragon/pitch_angle/torque", pitch_angle_torque);
-        register_output("/example/left2006/control_torque", left_control_torque_);
-        register_output("/example/right2006/control_torque", right_control_torque_);
+        register_output("/example/left2006/control_pitch_torque_base", left_control_torque_);
+        register_output("/example/left2006/control_pitch_torque_base", right_control_torque_);
     }
 
     void update() override {

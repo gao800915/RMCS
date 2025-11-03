@@ -12,6 +12,8 @@ rmcs_executor:
       - rmcs_core::controller::pid::PidController -> left2006_velocity_controller
       - rmcs_core::controller::pid::PidController -> right2006_velocity_controller
       - rmcs_core::controller::pid::PidController -> pitch_pid
+      - rmcs_core::controller::pid::PidController -> pitch_pid_left_control_torque
+      - rmcs_core::controller::pid::PidController -> pitch_pid_right_control_torque
     
 cboard_example:
   ros__parameters:
@@ -40,14 +42,30 @@ right2006_velocity_controller:
     setpoint: /example/right2006/aim_velocity
     measurement: /example/right2006/velocity
     control: /example/right2006/control_torque_base
-    kp: 10.0
-    ki: 0.0
+    kp: 2.0
+    ki: 0.01
     kd: 0.0
 pitch_pid:
   ros__parameters:
     setpoint: 20.0
     measurement: "/dragon/pitch/angle"
-    control: /dragon/pitch_angle/torque
+    control: /dragon/pitch_angle/aim_velocity
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+pitch_pid_left_control_torque:
+  ros__parameters:
+    setpoint: /dragon/pitch_angle/aim_velocity
+    measurement: /example/left2006/velocity
+    control: /example/left2006/control_pitch_torque_base
+    kp: 10.0
+    ki: 0.0
+    kd: 0.0
+pitch_pid_right_control_torque:
+  ros__parameters:
+    setpoint: /dragon/pitch_angle/aim_velocity
+    measurement: /example/right2006/velocity
+    control: /example/left2006/control_pitch_torque_base
     kp: 10.0
     ki: 0.0
     kd: 0.0
