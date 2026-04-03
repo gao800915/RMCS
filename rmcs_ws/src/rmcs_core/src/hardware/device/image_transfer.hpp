@@ -7,7 +7,7 @@
 #include <rmcs_executor/component.hpp>
 #include <rmcs_msgs/keyboard.hpp>
 #include <rmcs_msgs/mouse.hpp>
-#include <rmcs_msgs/switch.hpp>
+#include <rmcs_msgs/vtswitch.hpp>
 
 namespace rmcs_core::hardware::device {
 
@@ -19,7 +19,7 @@ public:
         component.register_output("/remote/joystick/left", joystick_left_, Eigen::Vector2d::Zero());
 
         component.register_output(
-            "/remote/switch/state", switch_state_, rmcs_msgs::Switch::UNKNOWN);
+            "/remote/switch/state", switch_state_, rmcs_msgs::VTSwitch::UNKNOWN);
 
         component.register_output(
             "/remote/pause/state", pause_,0);
@@ -47,8 +47,7 @@ public:
 
 
         // Simulate the rotary knob as a switch, with anti-shake algorithm.
-        component.register_output(
-            "/remote/rotary_knob_switch", rotary_knob_switch_, rmcs_msgs::Switch::UNKNOWN);
+        
     }
 
     void update_status() {
@@ -78,8 +77,8 @@ public:
         return to_eigen_vector(librmcs::device::ImageTrans::joystick_left());
     }
 
-    rmcs_msgs::Switch switch_state() const {
-        return std::bit_cast<rmcs_msgs::Switch>(librmcs::device::ImageTrans::switch_state());
+    rmcs_msgs::VTSwitch switch_state() const {
+        return std::bit_cast<rmcs_msgs::VTSwitch>(librmcs::device::ImageTrans::switch_state());
     }
 
     Eigen::Vector2d mouse_velocity() const {
@@ -101,7 +100,7 @@ private:
     rmcs_executor::Component::OutputInterface<Eigen::Vector2d> joystick_right_;
     rmcs_executor::Component::OutputInterface<Eigen::Vector2d> joystick_left_;
 
-    rmcs_executor::Component::OutputInterface<rmcs_msgs::Switch> switch_state_;
+    rmcs_executor::Component::OutputInterface<rmcs_msgs::VTSwitch> switch_state_;
 
     rmcs_executor::Component::OutputInterface<bool> pause_;
     rmcs_executor::Component::OutputInterface<bool> custom_key_left_;
@@ -115,8 +114,7 @@ private:
     rmcs_executor::Component::OutputInterface<rmcs_msgs::Mouse> mouse_;
     rmcs_executor::Component::OutputInterface<rmcs_msgs::Keyboard> keyboard_;
     
-    
-    rmcs_executor::Component::OutputInterface<rmcs_msgs::Switch> rotary_knob_switch_;
+
 };
 
 } // namespace rmcs_core::hardware::device
