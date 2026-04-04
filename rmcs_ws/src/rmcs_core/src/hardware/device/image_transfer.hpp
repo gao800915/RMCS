@@ -67,6 +67,9 @@ public:
         *keyboard_ = keyboard();
         *thumbwheel_=thumbwheel();
         *trigger_=trigger();
+
+        *custom_key_left_=custom_key_left();
+        *custom_key_right_=custom_key_right();
         
     }
 
