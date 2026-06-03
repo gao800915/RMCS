@@ -1,0 +1,9 @@
+rmcs_executor:
+  ros__parameters:
+    update_rate: 1000.0
+    components:
+      - rmcs_core::hardware::WheelLegInfantry -> infantry_hardware
+
+infantry_hardware:
+  ros__parameters:
+    usb_pid_bottom_board: 0x93ac
