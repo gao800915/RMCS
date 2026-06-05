@@ -301,23 +301,23 @@ private:
                     .set_reversed());
 
             chassis_hip_motors[0].configure(
-                device::DmMotor::Config{device::DmMotor::Type::DM8009}
+                device::DmMotor::Config{device::DmMotor::Type::kDM8009}
                     .set_encoder_zero_point(
                         static_cast<int>(
                             infantry.get_parameter("left_front_hip_motor_zero_point").as_int()))
                     .set_reversed());
             chassis_hip_motors[1].configure(
-                device::DmMotor::Config{device::DmMotor::Type::DM8009}
+                device::DmMotor::Config{device::DmMotor::Type::kDM8009}
                     .set_encoder_zero_point(
                         static_cast<int>(
                             infantry.get_parameter("left_back_hip_motor_zero_point").as_int()))
                     .set_reversed());
             chassis_hip_motors[2].configure(
-                device::DmMotor::Config{device::DmMotor::Type::DM8009}.set_encoder_zero_point(
+                device::DmMotor::Config{device::DmMotor::Type::kDM8009}.set_encoder_zero_point(
                     static_cast<int>(
                         infantry.get_parameter("right_back_hip_motor_zero_point").as_int())));
             chassis_hip_motors[3].configure(
-                device::DmMotor::Config{device::DmMotor::Type::DM8009}.set_encoder_zero_point(
+                device::DmMotor::Config{device::DmMotor::Type::kDM8009}.set_encoder_zero_point(
                     static_cast<int>(
                         infantry.get_parameter("right_front_hip_motor_zero_point").as_int())));
 
@@ -463,13 +463,12 @@ private:
             if (data.is_extended_can_id || data.is_remote_transmission) [[unlikely]]
                 return;
 
-            const auto can_data = can_data_to_u64(data.can_data);
             if (data.can_id == 0x201) {
                 chassis_wheel_motors_[0].store_status(can_data);
             } else if (data.can_id == 0x01) {
-                chassis_hip_motors[0].store_status(can_data);
+                chassis_hip_motors[0].store_status(data.can_data);
             } else if (data.can_id == 0x02) {
-                chassis_hip_motors[1].store_status(can_data);
+                chassis_hip_motors[1].store_status(data.can_data);
             }
         }
 
@@ -477,13 +476,12 @@ private:
             if (data.is_extended_can_id || data.is_remote_transmission) [[unlikely]]
                 return;
 
-            const auto can_data = can_data_to_u64(data.can_data);
             if (data.can_id == 0x202) {
                 chassis_wheel_motors_[1].store_status(can_data);
             } else if (data.can_id == 0x03) {
-                chassis_hip_motors[2].store_status(can_data);
+                chassis_hip_motors[2].store_status(data.can_data);
             } else if (data.can_id == 0x04) {
-                chassis_hip_motors[3].store_status(can_data);
+                chassis_hip_motors[3].store_status(data.can_data);
             }
         }
 
