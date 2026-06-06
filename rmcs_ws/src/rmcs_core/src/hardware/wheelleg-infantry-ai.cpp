@@ -1,10 +1,8 @@
 
-#include <array>
 #include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <memory>
 #include <span>
 #include <string>
@@ -32,27 +30,6 @@
 #include "hardware/device/dm_motor.hpp"
 #include "hardware/device/dr16.hpp"
 #include "hardware/device/lk_motor.hpp"
-
-namespace {
-
-template <typename T>
-std::span<const std::byte, sizeof(T)> as_byte_span(const T& value) {
-    return {
-        reinterpret_cast<const std::byte*>(&value),
-        sizeof(T),
-    };
-}
-
-uint64_t can_data_to_u64(std::span<const std::byte> bytes) {
-    uint64_t value{};
-    if (bytes.size() != sizeof(value)) [[unlikely]]
-        return value;
-
-    std::memcpy(&value, bytes.data(), sizeof(value));
-    return value;
-}
-
-} // namespace
 
 namespace rmcs_core::hardware {
 
@@ -159,15 +136,16 @@ private:
             , gimbal_left_friction_(infantry, infantry_command, "/gimbal/left_friction")
             , gimbal_right_friction_(infantry, infantry_command, "/gimbal/right_friction") {
             gimbal_pitch_motor_.configure(
-                device::LkMotor::Config{device::LkMotor::Type::MG5010E_I10}
+                device::LkMotor::Config{device::LkMotor::Type::kMG5010Ei10}
                     .set_encoder_zero_point(
                         static_cast<int>(
                             infantry.get_parameter("pitch_motor_zero_point").as_int())));
 
             gimbal_left_friction_.configure(
-                device::DjiMotor::Config{device::DjiMotor::Type::M3508}.set_reduction_ratio(1.0));
+                device::DjiMotor::Config{device::DjiMotor::Type::kM3508}
+                    .set_reduction_ratio(1.0));
             gimbal_right_friction_.configure(
-                device::DjiMotor::Config{device::DjiMotor::Type::M3508}
+                device::DjiMotor::Config{device::DjiMotor::Type::kM3508}
                     .set_reduction_ratio(1.0)
                     .set_reversed());
 
@@ -208,22 +186,23 @@ private:
         void command_update() {
             auto builder = start_transmit();
 
-            const std::array<uint16_t, 4> control_commands{
-                gimbal_left_friction_.generate_command(),
-                gimbal_right_friction_.generate_command(),
-                0,
-                0,
-            };
             builder.can1_transmit({
                 .can_id = 0x200,
-                .can_data = as_byte_span(control_commands),
+                .can_data =
+                    device::CanPacket8{
+                                       gimbal_left_friction_.generate_command(),
+                                       gimbal_right_friction_.generate_command(),
+                                       device::CanPacket8::PaddingQuarter{},
+                                       device::CanPacket8::PaddingQuarter{},
+                                       }
+                        .as_bytes(),
             });
 
-            const auto pitch_command =
+            auto pitch_command =
                 gimbal_pitch_motor_.generate_velocity_command(gimbal_pitch_motor_.control_velocity());
             builder.can2_transmit({
                 .can_id = 0x141,
-                .can_data = as_byte_span(pitch_command),
+                .can_data = pitch_command.as_bytes(),
             });
         }
 
@@ -232,11 +211,10 @@ private:
             if (data.is_extended_can_id || data.is_remote_transmission) [[unlikely]]
                 return;
 
-            const auto can_data = can_data_to_u64(data.can_data);
             if (data.can_id == 0x201) {
-                gimbal_left_friction_.store_status(can_data);
+                gimbal_left_friction_.store_status(data.can_data);
             } else if (data.can_id == 0x202) {
-                gimbal_right_friction_.store_status(can_data);
+                gimbal_right_friction_.store_status(data.can_data);
             }
         }
 
@@ -245,7 +223,7 @@ private:
                 return;
 
             if (data.can_id == 0x141)
-                gimbal_pitch_motor_.store_status(can_data_to_u64(data.can_data));
+                gimbal_pitch_motor_.store_status(data.can_data);
         }
 
         void accelerometer_receive_callback(
@@ -291,11 +269,11 @@ private:
             , gimbal_yaw_motor_(infantry, infantry_command, "/gimbal/yaw")
             , bullet_feeder_motor_(infantry, infantry_command, "/gimbal/bullet_feeder") {
             chassis_wheel_motors_[0].configure(
-                device::DjiMotor::Config{device::DjiMotor::Type::M3508}
+                device::DjiMotor::Config{device::DjiMotor::Type::kM3508}
                     .set_reduction_ratio(268.0 / 17.0)
                     .enable_multi_turn_angle());
             chassis_wheel_motors_[1].configure(
-                device::DjiMotor::Config{device::DjiMotor::Type::M3508}
+                device::DjiMotor::Config{device::DjiMotor::Type::kM3508}
                     .set_reduction_ratio(268.0 / 17.0)
                     .enable_multi_turn_angle()
                     .set_reversed());
@@ -322,12 +300,12 @@ private:
                         infantry.get_parameter("right_front_hip_motor_zero_point").as_int())));
 
             gimbal_yaw_motor_.configure(
-                device::LkMotor::Config{device::LkMotor::Type::MG4010E_I10}
+                device::LkMotor::Config{device::LkMotor::Type::kMG4010Ei10}
                     .set_encoder_zero_point(
                         static_cast<int>(
                             infantry.get_parameter("yaw_motor_zero_point").as_int())));
             bullet_feeder_motor_.configure(
-                device::DjiMotor::Config{device::DjiMotor::Type::M2006}
+                device::DjiMotor::Config{device::DjiMotor::Type::kM2006}
                     .enable_multi_turn_angle()
                     .set_reversed()
                     .set_reduction_ratio(19 * 2));
@@ -335,8 +313,8 @@ private:
             infantry.register_output("/referee/serial", referee_serial_);
 
             referee_serial_->read = [this](std::byte* buffer, size_t size) {
-                return referee_ring_buffer_receive_.pop_front_multi(
-                    [&buffer](std::byte byte) { *buffer++ = byte; }, size);
+                return referee_ring_buffer_receive_.pop_front_n(
+                    [&buffer](std::byte byte) noexcept { *buffer++ = byte; }, size);
             };
             referee_serial_->write = [this](const std::byte* buffer, size_t size) {
                 start_transmit().uart1_transmit({
@@ -391,50 +369,52 @@ private:
         void command_update() {
             auto builder = start_transmit();
 
-            const std::array<uint16_t, 4> can1_commands{
-                chassis_wheel_motors_[0].generate_command(),
-                0,
-                0,
-                0,
-            };
             builder.can1_transmit({
                 .can_id = 0x200,
-                .can_data = as_byte_span(can1_commands),
+                .can_data =
+                    device::CanPacket8{
+                                       chassis_wheel_motors_[0].generate_command(),
+                                       device::CanPacket8::PaddingQuarter{},
+                                       device::CanPacket8::PaddingQuarter{},
+                                       device::CanPacket8::PaddingQuarter{},
+                                       }
+                        .as_bytes(),
             });
 
-            const auto left_front_hip_command = chassis_hip_motors[0].generate_command();
+            auto left_front_hip_command = chassis_hip_motors[0].generate_command();
             builder.can1_transmit({
                 .can_id = 0x01,
-                .can_data = as_byte_span(left_front_hip_command),
+                .can_data = left_front_hip_command.as_bytes(),
             });
 
-            const auto left_back_hip_command = chassis_hip_motors[1].generate_command();
+            auto left_back_hip_command = chassis_hip_motors[1].generate_command();
             builder.can1_transmit({
                 .can_id = 0x02,
-                .can_data = as_byte_span(left_back_hip_command),
+                .can_data = left_back_hip_command.as_bytes(),
             });
 
-            const std::array<uint16_t, 4> can2_commands{
-                0,
-                chassis_wheel_motors_[1].generate_command(),
-                0,
-                0,
-            };
             builder.can2_transmit({
                 .can_id = 0x200,
-                .can_data = as_byte_span(can2_commands),
+                .can_data =
+                    device::CanPacket8{
+                                       device::CanPacket8::PaddingQuarter{},
+                                       chassis_wheel_motors_[1].generate_command(),
+                                       device::CanPacket8::PaddingQuarter{},
+                                       device::CanPacket8::PaddingQuarter{},
+                                       }
+                        .as_bytes(),
             });
 
-            const auto right_back_hip_command = chassis_hip_motors[2].generate_command();
+            auto right_back_hip_command = chassis_hip_motors[2].generate_command();
             builder.can2_transmit({
                 .can_id = 0x03,
-                .can_data = as_byte_span(right_back_hip_command),
+                .can_data = right_back_hip_command.as_bytes(),
             });
 
-            const auto right_front_hip_command = chassis_hip_motors[3].generate_command();
+            auto right_front_hip_command = chassis_hip_motors[3].generate_command();
             builder.can2_transmit({
                 .can_id = 0x04,
-                .can_data = as_byte_span(right_front_hip_command),
+                .can_data = right_front_hip_command.as_bytes(),
             });
         }
 
@@ -464,7 +444,7 @@ private:
                 return;
 
             if (data.can_id == 0x201) {
-                chassis_wheel_motors_[0].store_status(can_data);
+                chassis_wheel_motors_[0].store_status(data.can_data);
             } else if (data.can_id == 0x01) {
                 chassis_hip_motors[0].store_status(data.can_data);
             } else if (data.can_id == 0x02) {
@@ -477,7 +457,7 @@ private:
                 return;
 
             if (data.can_id == 0x202) {
-                chassis_wheel_motors_[1].store_status(can_data);
+                chassis_wheel_motors_[1].store_status(data.can_data);
             } else if (data.can_id == 0x03) {
                 chassis_hip_motors[2].store_status(data.can_data);
             } else if (data.can_id == 0x04) {
@@ -487,8 +467,8 @@ private:
 
         void uart1_receive_callback(const librmcs::data::UartDataView& data) override {
             const auto* uart_data = data.uart_data.data();
-            referee_ring_buffer_receive_.emplace_back_multi(
-                [&uart_data](std::byte* storage) { *storage = *uart_data++; },
+            referee_ring_buffer_receive_.emplace_back_n(
+                [&uart_data](std::byte* storage) noexcept { *storage = *uart_data++; },
                 data.uart_data.size());
         }
 

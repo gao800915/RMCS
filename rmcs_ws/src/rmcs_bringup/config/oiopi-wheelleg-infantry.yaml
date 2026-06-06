@@ -6,4 +6,4 @@ rmcs_executor:
 
 infantry_hardware:
   ros__parameters:
-    usb_pid_bottom_board: 0x93ac
+    board_serial_bottom_board: "D4-818D-A833-2048-9829-303A-126D"
